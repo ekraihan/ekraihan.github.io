@@ -1,0 +1,127 @@
+<!DOCTYPE HTML>
+<html>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<head>
+    <title>2018 Developer Data</title>
+    <link href="main.css" rel="stylesheet">
+</head>
+<body onload="main()">
+
+<svg data-2018-dev-id="test">
+</svg>
+
+<div data-2018-dev-id="language-filter">
+</div>
+
+<script>
+    function attr(element) {
+        return `[data-2018-dev-id="${element}"]`
+    }
+
+    function print(m) {
+        console.log(m)
+    }
+
+    function getUniqueLanguages(data) {
+        let uniqueLanguages = new Set();
+        for (entry of data) {
+            for (language of entry.languages) {
+                uniqueLanguages.add(language)
+            }
+        }
+        return Array.from(uniqueLanguages);
+    }
+
+    function preprocessData(data) {
+        return data.map(row => ({
+            languages: row.languages.split(";"),
+            devTypes: row.devTypes.split(";"),
+            salary: parseFloat(row.salary)
+        }))
+    }
+
+    const CHART_HEIGHT = 900;
+    const CHART_WIDTH = 1300;
+    const MARGIN_SIZE = 50;
+
+    let colorScale;
+    function prepareChart(languages) {
+        let chart = d3.select(attr("test"))
+            .attr("height", CHART_HEIGHT)
+            .attr("width", CHART_WIDTH)
+            .append("g")
+            .attr("transform", `translate(${MARGIN_SIZE},${MARGIN_SIZE})`)
+
+        let xAxisScale = d3.scaleLinear().domain([0, 200000]).range([0,1230])
+        chart.append("g")
+            .attr("transform", `translate(0,500)`)
+            .call(d3.axisBottom(xAxisScale))
+
+        let yAxisScale = d3.scaleLinear().domain([0, 1]).range([500,0])
+        chart.append("g")
+            .call(d3.axisLeft(yAxisScale))
+        
+        const maxColorIndex = languages.length - 1;
+        colorScale = d3.scaleLinear(d3.range(0, maxColorIndex, maxColorIndex/4).concat(maxColorIndex), ['#6649A6', '#023059', '#0477BF', '#618C03', '#F29F05']);
+
+        languages.forEach((language, i) => {
+            chart.append("path")
+                .attr("class", "chart-line")
+                .attr("stroke", () => colorScale(i))
+                .attr("data-2018-dev-id", `${language}-chart`)
+        });
+    }
+
+    async function main() {
+        const data = preprocessData(await d3.csv("http://localhost:8000/ui-data.csv"));
+        let uniqueLanguages = getUniqueLanguages(data);
+
+        prepareChart(uniqueLanguages);
+
+        let histogram = d3.histogram().thresholds(30).domain([0,200001]);
+        let salaries = data.map(d => d.salary)
+
+        let languageSelected = new Array(uniqueLanguages.length).fill(false);
+
+        function removeLine(lineSelector) {
+            d3.select(lineSelector).attr("d", "")
+        }
+
+        function addLine(lineSelector, salaries) {
+            let lineGenerator = d3.line()
+                .x((_,i) => i * 30)
+                .y((d,i) => 500 - d.length/salaries.length * 5000)
+                .curve(d3.curveBasis);
+
+            d3.select(lineSelector)
+                .datum(histogram(salaries))
+                .attr("d", lineGenerator)
+        }
+
+        d3.select(attr("language-filter"))
+            .selectAll()
+            .data(uniqueLanguages)
+            .enter()
+            .append("div")
+            .attr("class", "filter not-clicked")
+            .text(d => d)
+            .on('click', function(lang, i) {
+                let selected = languageSelected[i];
+                if (selected) {
+                    removeLine(attr(`${lang}-chart`))
+                    d3.select(this).style("background", "")
+                    d3.select(this).attr("class", "filter not-clicked");
+                } else {
+                    let salariesWithLanguage = salaries.filter((d,i) => data[i].languages.includes(lang))
+                    addLine(attr(`${lang}-chart`), salariesWithLanguage)
+                    d3.select(this).style("background", colorScale(i))
+                }
+
+                languageSelected[i] = !selected  
+            })
+    }
+    
+</script>
+
+</body>
+</html>

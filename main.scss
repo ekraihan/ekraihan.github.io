@@ -1,0 +1,42 @@
+@import url("https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic");
+
+html {
+    font-family: 'Roboto', sans-serif;
+    background: #D2D6D9;
+}
+
+body {
+    display: flex;
+    .chart-line {
+        fill: none;
+        stroke-width: 3;
+        opacity: 0.73;
+    }
+}
+
+[data-2018-dev-id="language-filter"] {
+    height: 100vh;
+    overflow: scroll;
+}
+
+.filter {
+    border-style: solid;
+    border-width: 0px;
+    color: #cccccc;
+    border-radius: 10px;
+    width: 130px;
+    height: 25px;
+    padding: 5px;
+    margin: 7.9px;
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+
+    &.not-clicked {
+        background: linear-gradient(#666666, #222222);
+    }
+
+}
+
