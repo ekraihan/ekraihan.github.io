@@ -40,26 +40,44 @@
         }))
     }
 
-    const CHART_HEIGHT = 900;
-    const CHART_WIDTH = 1300;
+    const CHART_HEIGHT = 600;
+    const CHART_WIDTH = 1000;
     const MARGIN_SIZE = 50;
+    const CURVE_BOTTOM = CHART_HEIGHT - MARGIN_SIZE;
 
     let colorScale;
     function prepareChart(languages) {
         let chart = d3.select(attr("test"))
-            .attr("height", CHART_HEIGHT)
-            .attr("width", CHART_WIDTH)
+            .attr("height", 750)
+            .attr("width", 1300)
             .append("g")
-            .attr("transform", `translate(${MARGIN_SIZE},${MARGIN_SIZE})`)
+            .attr("transform", `translate(${MARGIN_SIZE+70},${MARGIN_SIZE+50})`)
 
-        let xAxisScale = d3.scaleLinear().domain([0, 200000]).range([0,1230])
+        // X axis
+        let xAxisScale = d3.scaleLinear().domain([0, 200000]).range([0,1000])
         chart.append("g")
-            .attr("transform", `translate(0,500)`)
+            .attr("transform", `translate(0,${CURVE_BOTTOM})`)
             .call(d3.axisBottom(xAxisScale))
 
-        let yAxisScale = d3.scaleLinear().domain([0, 1]).range([500,0])
+        chart
+            .append("text")
+            .attr("text-anchor", "end")
+            .attr("x", CHART_WIDTH/2+100)
+            .attr("y", CURVE_BOTTOM+MARGIN_SIZE)
+            .text("Salary (Annual USD)");
+
+        // Y axis
+        let yAxisScale = d3.scaleLinear().domain([0, 0.11]).range([CURVE_BOTTOM,0])
         chart.append("g")
-            .call(d3.axisLeft(yAxisScale))
+            .call(d3.axisLeft(yAxisScale));
+
+        chart
+            .append("text")
+            .attr("text-anchor", "end")
+            .attr("x", -200)
+            .attr("y", -50)
+            .attr("transform", "rotate(-90)")
+            .text("Language frequency");
         
         const maxColorIndex = languages.length - 1;
         colorScale = d3.scaleLinear(d3.range(0, maxColorIndex, maxColorIndex/4).concat(maxColorIndex), ['#6649A6', '#023059', '#0477BF', '#618C03', '#F29F05']);
@@ -70,10 +88,20 @@
                 .attr("stroke", () => colorScale(i))
                 .attr("data-2018-dev-id", `${language}-chart`)
         });
+
+        // Chart title
+        chart
+            .append("text")
+            .attr("text-anchor", "end")
+            .attr("x", CHART_WIDTH/2+250)
+            .attr("y", 0)
+            .style("font-size", 30)
+            .text("Salary Distributions by Language");
     }
 
     async function main() {
-        const data = preprocessData(await d3.csv("https://ekraihan.github.io/data/ui-data.csv"));
+        // const data = preprocessData(await d3.csv("https://ekraihan.github.io/data/ui-data.csv"));
+        const data = preprocessData(await d3.csv("http://localhost:8000/ui-data.csv"));
         let uniqueLanguages = getUniqueLanguages(data);
 
         prepareChart(uniqueLanguages);
@@ -89,8 +117,11 @@
 
         function addLine(lineSelector, salaries) {
             let lineGenerator = d3.line()
-                .x((_,i) => i * 30)
-                .y((d,i) => 500 - d.length/salaries.length * 5000)
+                .x((_,i) => i * 25)
+                .y((d,i) => {
+                    console.log(d.length/salaries.length, i)
+                    return CURVE_BOTTOM - d.length/salaries.length * 5000
+                })
                 .curve(d3.curveBasis);
 
             d3.select(lineSelector)
