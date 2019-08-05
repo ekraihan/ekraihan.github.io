@@ -100,8 +100,7 @@
     }
 
     async function main() {
-        // const data = preprocessData(await d3.csv("https://ekraihan.github.io/data/ui-data.csv"));
-        const data = preprocessData(await d3.csv("http://localhost:8000/ui-data.csv"));
+        const data = preprocessData(await d3.csv("https://ekraihan.github.io/data/ui-data.csv"));
         let uniqueLanguages = getUniqueLanguages(data);
 
         prepareChart(uniqueLanguages);
